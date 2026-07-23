@@ -1,4 +1,4 @@
-const express = genre = require('express');
+const express = require('express');
 const https = require('https');
 const app = express();
 
@@ -39,7 +39,6 @@ app.get('/get-stream', async (req, res) => {
             const data = await fetchUrl(api);
             const json = JSON.parse(data);
             if (json.formatStreams && json.formatStreams.length > 0) {
-                // Ən yaxşı mp4 formatını seçirik
                 const stream = json.formatStreams.find(s => s.container === "mp4" && s.url);
                 if (stream && stream.url) {
                     return res.json({ success: true, url: stream.url });
