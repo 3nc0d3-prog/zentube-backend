@@ -8,8 +8,8 @@ app.get('/get-stream', (req, res) => {
         return res.status(400).json({ success: false, message: "videoId daxil edilməyib" });
     }
 
-    // Cobalt API və ya digər stabil açıq mənbəli media yönləndiricilərindən istifadə edirik
-    const targetUrl = `https://piped-api.garudalinux.org/streams/${videoId}`;
+    // Hazırda aktiv və stabil işləyən Piped API ünvanı
+    const targetUrl = `https://pipedapi.privacy.com.de/streams/${videoId}`;
 
     https.get(targetUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
