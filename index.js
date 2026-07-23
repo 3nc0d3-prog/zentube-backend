@@ -1,35 +1,42 @@
 const express = require('express');
-const ytdl = require('@distube/ytdl-core');
+const https = require('https');
 const app = express();
 
-app.get('/get-stream', async (req, res) => {
+app.get('/get-stream', (req, res) => {
     const videoId = req.query.videoId;
     if (!videoId) {
         return res.status(400).json({ success: false, message: "videoId daxil edilməyib" });
     }
 
-    try {
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const info = await ytdl.getInfo(videoUrl, {
-            requestOptions: {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    // Stabil Piped API instansiyalarından istifadə edirik
+    const pipedApiUrl = `https://pipedapi.kavin.rocks/streams/${videoId}`;
+
+    https.get(pipedApiUrl, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        }
+    }, (apiRes) => {
+        let data = '';
+        apiRes.on('data', (chunk) => { data += chunk; });
+        apiRes.on('end', () => {
+            try {
+                const json = JSON.parse(data);
+                if (json.videoStreams && json.videoStreams.length > 0) {
+                    // Səs və video olan birbaşa mp4 formatını seçirik
+                    const stream = json.videoStreams.find(s => !s.videoOnly && s.url);
+                    if (stream && stream.url) {
+                        return res.json({ success: true, url: stream.url });
+                    }
                 }
+                return res.status(404).json({ success: false, message: "No playable formats found" });
+            } catch (e) {
+                return res.status(500).json({ success: false, error: "JSON parse xətası" });
             }
         });
-
-        // Səs və video birgə olan ən yüksək keyfiyyətli linki seçirik
-        const format = ytdl.chooseFormat(info.formats, { filter: 'audioandvideo', quality: 'highestvideo' });
-
-        if (format && format.url) {
-            return res.json({ success: true, url: format.url });
-        } else {
-            return res.status(404).json({ success: false, message: "Stream URL tapılmadı" });
-        }
-    } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
-    }
+    }).on('error', (err) => {
+        return res.status(500).json({ success: false, error: err.message });
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server ${PORT} portunda işləyir`));
+app.listen(PORT, () => console.log(`Server işləyir`));
